@@ -20,8 +20,6 @@ export default function App() {
           }
         >
           <Route index path="/" element={<Home />} />
-          {/* Aquí puedes agregar más rutas hijas si las necesitas */}
-          {/* <Route path="profile" element={<Profile />} /> */}
         </Route>
 
         {/* Rutas públicas de autenticación */}

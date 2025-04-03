@@ -6,6 +6,7 @@ export class AuthServiceImpl implements AuthService {
     private readonly AUTH_TOKEN_KEY = 'auth_token';
     private readonly TOKEN_TIMESTAMP_KEY = 'token_timestamp';
     private readonly TOKEN_EXPIRATION_TIME = 30 * 1000; // 30 segundos
+    private readonly SIGNIN_PAGE = "/signin";
 
     private getToken(): string | null {
         return localStorage.getItem(this.AUTH_TOKEN_KEY);
@@ -17,6 +18,14 @@ export class AuthServiceImpl implements AuthService {
 
         const elapsedTime = Date.now() - parseInt(timestamp, 10);
         return elapsedTime > this.TOKEN_EXPIRATION_TIME;
+    }
+
+    private clearAuthData() {
+        console.warn("Sesión expirada, eliminando token...");
+        localStorage.removeItem(this.AUTH_TOKEN_KEY);
+        localStorage.removeItem(this.TOKEN_TIMESTAMP_KEY);
+        window.dispatchEvent(new Event("authExpired")); // Notifica a otros componentes
+        window.location.href = this.SIGNIN_PAGE; // Redirige a la página de inicio de sesión
     }
 
     private getAuthHeaders(): HeadersInit {
@@ -58,11 +67,7 @@ export class AuthServiceImpl implements AuthService {
             localStorage.setItem(this.AUTH_TOKEN_KEY, data.token);
             localStorage.setItem(this.TOKEN_TIMESTAMP_KEY, Date.now().toString());
 
-            setTimeout(() => {
-                console.warn("Sesión expirada, eliminando token...");
-                localStorage.removeItem(this.AUTH_TOKEN_KEY);
-                localStorage.removeItem(this.TOKEN_TIMESTAMP_KEY);
-            }, this.TOKEN_EXPIRATION_TIME);
+            setTimeout(() => this.clearAuthData(), this.TOKEN_EXPIRATION_TIME);
 
             return { id: data.user.id.toString(), name: data.user.name, email: data.user.email, token: data.token };
         } catch (error) {
@@ -106,24 +111,21 @@ export class AuthServiceImpl implements AuthService {
                 method: "POST",
                 headers: this.getAuthHeaders(),
             });
-    
+
             if (!response.ok) {
                 console.warn("Error al cerrar sesión en el servidor");
             }
         } catch (error) {
             console.error("Logout API error:", error);
         } finally {
-            localStorage.removeItem(this.AUTH_TOKEN_KEY);
-            localStorage.removeItem(this.TOKEN_TIMESTAMP_KEY);
-            window.dispatchEvent(new Event('authExpired'));
+            this.clearAuthData();
         }
     }
 
     async verifyAuth(): Promise<boolean> {
         if (this.isTokenExpired()) {
             console.warn("Token expirado, eliminando token localmente...");
-            localStorage.removeItem(this.AUTH_TOKEN_KEY);
-            localStorage.removeItem(this.TOKEN_TIMESTAMP_KEY);
+            this.clearAuthData();
             return false;
         }
 
@@ -141,8 +143,7 @@ export class AuthServiceImpl implements AuthService {
 
             if (!response.ok) {
                 console.warn("Token inválido o expirado:", response.status);
-                localStorage.removeItem(this.AUTH_TOKEN_KEY);
-                localStorage.removeItem(this.TOKEN_TIMESTAMP_KEY);
+                this.clearAuthData();
                 return false;
             }
 

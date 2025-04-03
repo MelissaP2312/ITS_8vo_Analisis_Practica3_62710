@@ -27,9 +27,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     checkAuth();
   }, [navigate]);
 
-  if (isChecking) {
+  /*if (isChecking) {
     return <div className="p-4">Verificando sesión...</div>;
-  }
+  }*/
 
   return <>{isAuthenticated ? children : null}</>;
 }
