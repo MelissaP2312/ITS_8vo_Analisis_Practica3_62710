@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
@@ -12,6 +12,7 @@ import { AuthServiceImpl } from "../../../infrastructure/services/AuthServiceImp
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const defaultValues = {
     email: "",
@@ -32,19 +33,28 @@ export default function SignInForm() {
     console.log(data)
   }*/
 
-  const handleSubmit = async (data: {email: string; password: string}) => {
-    const authService = new AuthServiceImpl();
-    const loginUseCase = new LoginUseCase(authService);
-
-    const user = await loginUseCase.execute(data.email, data.password);
-    if (user) {
-      alert('Login successful');
-      localStorage.setItem('token', user.token);
-      window.location.href = '/';
-    } else {
-      alert('Login failed');
-    }
-  }
+    const handleSubmit = async (data: { email: string; password: string }) => {
+      try {
+        // Paso 1: Obtener la cookie CSRF antes de cualquier llamada protegida
+        await fetch("http://localhost:8000/sanctum/csrf-cookie", {
+          credentials: "include"
+        });
+    
+        // Paso 2: Ejecutar el login
+        const authService = new AuthServiceImpl();
+        const loginUseCase = new LoginUseCase(authService);
+    
+        const user = await loginUseCase.execute(data.email, data.password);
+        if (user) {
+          navigate('/'); // Redirige al dashboard
+        } else {
+          alert('Login failed');
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        alert('Login failed');
+      }
+    };
 
   return (
     <div className="flex flex-col flex-1">

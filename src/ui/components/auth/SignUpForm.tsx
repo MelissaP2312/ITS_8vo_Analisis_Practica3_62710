@@ -47,7 +47,7 @@ export default function SignUpForm() {
       if (user) {
         alert('Registration successful');
         localStorage.setItem('token', user.token);
-        window.location.href = '/';
+        window.location.href = '/signin';
       } else {
         alert('Registration failed');
       }
